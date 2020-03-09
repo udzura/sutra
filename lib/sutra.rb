@@ -1,4 +1,6 @@
 require "sutra/version"
+require "sutra/macro"
+
 require "zendesk_api"
 
 module Sutra

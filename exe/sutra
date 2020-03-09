@@ -1,3 +1,6 @@
 #!/usr/bin/env ruby
 
 require "sutra"
+require "sutra/cli"
+
+Sutra::Cli.new(ARGV.dup).run
