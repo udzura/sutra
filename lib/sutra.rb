@@ -1,7 +1,6 @@
 require "sutra/version"
+require "sutra/api"
 require "sutra/macro"
-
-require "zendesk_api"
 
 module Sutra
   class Error < StandardError; end
