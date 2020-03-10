@@ -5,14 +5,7 @@ module Sutra
   class Macro
     def initialize(argv)
       @action = argv.shift
-      @options = OptionParser.getopts(argv, 'c:o:', 'category:', 'out:')
-
-      if @action != "dump"
-        raise OptionParser::ParseError
-      end
-    rescue OptionParser::ParseError
-      $stderr.puts usage
-      exit 1
+      @argv = argv
     end
 
     def usage
@@ -21,6 +14,8 @@ module Sutra
         Available actions:
         \tdump [-c|--category CATEGORY_NAME] [-o|--out OUTFILE]
         \t`- dump current existing macro into YAML
+        \tcategories [-f|--filter FILTER_RE] [-q]
+        \t`- show current existing categories
       USAGE
     end
 
@@ -28,12 +23,19 @@ module Sutra
       case @action
       when /^d/
         do_dump
+      when /^c/
+        do_list_categories
       else
-        raise "[BUG] unknown subcommand #{ARGV.inspect}"
+        raise OptionParser::ParseError
       end
+    rescue OptionParser::ParseError
+      $stderr.puts usage
+      exit 1
     end
 
     def do_dump
+      @options = OptionParser.getopts(@argv, 'c:o:', 'category:', 'out:')
+
       category = @options['category'] || @options['c']
       yaml = YAML.dump find_all_by_category(category).map(&:to_h)
 
@@ -45,6 +47,22 @@ module Sutra
            end
       io.write yaml + "\n"
       puts "Dump int #{out} successfully" if out
+    end
+
+    def do_list_categories
+      @options = OptionParser.getopts(@argv, 'qf:', 'filter:')
+      filter = @options['filter'] || @options['f']
+      quiet = !!@options['q']
+
+      cats = Sutra::API.current.client.connection.get("macros/categories.json").body
+      cats["categories"].select! {|c| c =~ Regexp.compile(filter) } if filter
+
+      if quiet || !$stdout.tty?
+        cats["categories"].each {|c| puts "#{c}" }
+      else
+        puts "Available categories:"
+        cats["categories"].each {|c| puts "\t#{c}" }
+      end
     end
 
     def find_all_by_category(category)
