@@ -85,7 +85,11 @@ module Sutra
         case @_data.dig("restriction", "type")
         when "Group"
           @_restriction_group ||= Sutra::API.current.client.groups.find(id: @_data.dig("restriction", "id"))
-          self["restriction"].merge({"name" => @_restriction_group.name}).to_hash
+          ret = self["restriction"].merge({"name" => @_restriction_group.name}).to_hash
+          if ret["ids"] && ret["ids"].size <= 1
+            ret.delete "ids"
+          end
+          ret
         else
           self["restriction"].to_hash
         end
